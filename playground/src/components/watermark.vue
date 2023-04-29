@@ -13,6 +13,10 @@ const props = defineProps({
     type: Number,
     default: 20,
   },
+  styles: {
+    type: String,
+    default: '',
+  },
 })
 
 const waterRef = ref<HTMLElement>()
@@ -28,7 +32,7 @@ watchEffect(() => {
     div.remove()
   div = document.createElement('div')
   const { base64, styleSize } = bg.value
-  div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;`
+  div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;${props.styles}`
   waterRef.value.appendChild(div)
 })
 
