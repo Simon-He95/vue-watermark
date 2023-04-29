@@ -1,9 +1,22 @@
-## vue-watermark
+<p align="center">
+<img height="200" src="./assets/kv.png" alt="watermark">
+</p>
 
-vue3水印组件
+vue3水印组件 | vue3 watermark component
 
->WIP
+## Install
+```
+npm i vue-watermark
+```
 
+## Usage
+```
+import {waterMark} from 'vue-watermark'
+
+<water-mark>
+// main
+</water-mark>
+```
 
 ## License
 [MIT](./LICENSE) License © 2022 [Simon He](https://github.com/Simon-He95)

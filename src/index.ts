@@ -1,2 +1,2 @@
-export { component } from './component'
+export { waterMark } from './component'
 export * from './types'
