@@ -6,12 +6,12 @@ vue3水印组件 | vue3 watermark component
 
 ## Install
 ```
-npm i vue-watermark
+npm i @simon_he/vue-watermark
 ```
 
 ## Usage
 ```
-import {waterMark} from 'vue-watermark'
+import {waterMark} from '@simon_he/vue-watermark'
 
 <water-mark>
 // main
