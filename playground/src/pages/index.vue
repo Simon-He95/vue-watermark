@@ -4,7 +4,7 @@ import { WaterMark } from '../../../src'
 
 <template>
   <div>
-    <WaterMark :font-size="20" w-100 h-100>
+    <WaterMark :font-size="20" :rotation="-45" w-100 h-100>
       <div />
     </WaterMark>
   </div>

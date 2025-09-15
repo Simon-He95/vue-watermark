@@ -49,7 +49,7 @@
     "play": "pnpm run -C playground dev",
     "play:build": "pnpm run -C playground build",
     "format": "prettier --write --cache .",
-    "lint": "eslint . --ext .vue,.js,.ts,.jsx,.tsx,.md,.json --max-warnings 0 --cache",
+    "lint": "eslint . --cache",
     "lint:fix": "pnpm run lint --fix",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest --dir test -u",

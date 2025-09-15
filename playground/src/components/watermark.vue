@@ -12,6 +12,30 @@ const props = defineProps({
     type: Number,
     default: 20,
   },
+  rotation: {
+    type: Number,
+    default: -45,
+  },
+  image: {
+    type: [String, Object],
+    default: '',
+  },
+  imageScale: {
+    type: Number,
+    default: 0.6,
+  },
+  color: {
+    type: String,
+    default: 'auto',
+  },
+  autoColorDark: {
+    type: String,
+    default: 'rgba(255,255,255,0.35)',
+  },
+  autoColorLight: {
+    type: String,
+    default: 'rgba(0,0,0,0.3)',
+  },
   styles: {
     type: String,
     default: '',
