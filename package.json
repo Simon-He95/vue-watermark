@@ -1,7 +1,8 @@
 {
   "name": "@simon_he/vue-watermark",
+  "type": "module",
   "version": "0.0.3",
-  "packageManager": "pnpm@7.18.2",
+  "packageManager": "pnpm@7.33.7",
   "description": "vue-watermark",
   "author": "Simon He",
   "license": "MIT",
@@ -19,8 +20,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -43,7 +44,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
-    "build": "tsup ./src/index.ts --format cjs,esm --dts --clean --minify",
+    "build": "tsdown",
     "dev": "npm run build -- --watch src",
     "play": "pnpm run -C playground dev",
     "play:build": "pnpm run -C playground build",
@@ -59,25 +60,24 @@
     "release": "bumpp --commit --tag --push && git push origin --tags -f && npm publish"
   },
   "dependencies": {
-    "@vueuse/core": "^9.0.0",
-    "vue": "^3.2.41"
+    "@vueuse/core": "^9.13.0",
+    "vue": "^3.5.21"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^0.34.0",
-    "@types/node": "^18.0.0",
-    "@vitejs/plugin-vue": "^3.1.2",
-    "bumpp": "^8.2.1",
-    "eslint": "^8.26.0",
-    "eslint-plugin-n": "^15.3.0",
-    "lint-staged": "^13.1.0",
-    "picocolors": "^1.0.0",
-    "prettier": "^2.8.1",
-    "simple-git-hooks": "^2.8.1",
-    "tsup": "^6.5.0",
-    "tsx": "^3.12.1",
-    "typescript": "^4.8.4",
-    "vite": "^4.0.0",
-    "vitest": "^0.13.1"
+    "@antfu/eslint-config": "^5.3.0",
+    "@types/node": "^24.4.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "bumpp": "^10.2.3",
+    "eslint": "^9.35.0",
+    "lint-staged": "^13.3.0",
+    "picocolors": "^1.1.1",
+    "prettier": "^2.8.8",
+    "simple-git-hooks": "^2.13.1",
+    "tsdown": "^0.15.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false",
@@ -88,8 +88,5 @@
       "prettier --write --cache --ignore-unknown"
     ],
     "*.{vue,js,ts,jsx,tsx,md,json}": "eslint --fix"
-  },
-  "eslintConfig": {
-    "extends": "@antfu"
   }
 }

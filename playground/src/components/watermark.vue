@@ -2,7 +2,6 @@
 const props = defineProps({
   text: {
     type: String,
-    required: true,
     default: 'watermark',
   },
   fontSize: {
@@ -25,14 +24,17 @@ let observer: MutationObserver
 let div: HTMLElement | null
 const updateCount = ref(0)
 watchEffect(() => {
-  updateCount.value
+  // ensure updateCount is tracked as a dependency
+  void updateCount.value
   if (!waterRef.value)
     return
   if (div)
     div.remove()
   div = document.createElement('div')
   const { base64, styleSize } = bg.value
-  div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;${props.styles}`
+  // Non-interactive overlay
+  div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;pointer-events:none;${props.styles}`
+  div.setAttribute('aria-hidden', 'true')
   waterRef.value.appendChild(div)
 })
 
@@ -48,12 +50,16 @@ onMounted(() => {
       }
       if (entry.target === div) {
         // 更新属性
-        updateCount.value++
+        void updateCount.value++
         continue
       }
     }
   })
-  observer.observe(waterRef.value!, { childList: true, subtree: true, attributes: true })
+  observer.observe(waterRef.value!, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+  })
 })
 
 onUnmounted(() => {
@@ -61,7 +67,11 @@ onUnmounted(() => {
   div = null
 })
 
-function useWatermarkBg(props: { fontSize: number; text: string; gap: number }) {
+function useWatermarkBg(props: {
+  fontSize: number
+  text: string
+  gap: number
+}) {
   const { gap, text, fontSize } = props
   return computed(() => {
     const canvas = document.createElement('canvas')
@@ -91,10 +101,9 @@ function useWatermarkBg(props: { fontSize: number; text: string; gap: number }) 
 </script>
 
 <template>
-  <div ref="waterRef" class="water-container" relative>
+  <div ref="waterRef" class="water-container">
     <slot />
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

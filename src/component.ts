@@ -1,13 +1,21 @@
 import type { DefineComponent } from 'vue'
-import { defineComponent, h, onMounted, onUnmounted, ref, watchEffect } from 'vue'
-import { useWatermarkBg } from './utils'
 import type { props } from './types'
-export const waterMark = defineComponent({
+import {
+  defineComponent,
+  h,
+  onMounted,
+  onUnmounted,
+  ref,
+  watchEffect,
+} from 'vue'
+import { useWatermarkBg } from './utils'
+
+export const WaterMark = defineComponent({
   name: 'WaterMark',
   props: {
     text: {
       type: String,
-      required: true,
+      // default provided below; not marked as required to avoid runtime contradictions
       default: 'watermark',
     },
     fontSize: {
@@ -30,14 +38,17 @@ export const waterMark = defineComponent({
     let div: HTMLElement | null
     const updateCount = ref(0)
     watchEffect(() => {
-      updateCount.value
+      // ensure updateCount is tracked as a dependency
+      void updateCount.value
       if (!waterRef.value)
         return
       if (div)
         div.remove()
       div = document.createElement('div')
       const { base64, styleSize } = bg.value
-      div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;${props.styles}`
+      // Make watermark overlay non-interactive and hidden from assistive tech
+      div.style.cssText = `background-image:url(${base64});background-size:${styleSize}px ${styleSize}px;background-repeat:repeat;width:100%;height:100%;z-index:9999;position:absolute;inset:0;pointer-events:none;${props.styles}`
+      div.setAttribute('aria-hidden', 'true')
       waterRef.value.appendChild(div)
     })
 
@@ -52,12 +63,16 @@ export const waterMark = defineComponent({
           }
           if (entry.target === div) {
             // 更新属性
-            updateCount.value++
+            void updateCount.value++
             continue
           }
         }
       })
-      observer.observe(waterRef.value!, { childList: true, subtree: true, attributes: true })
+      observer.observe(waterRef.value!, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+      })
     })
 
     onUnmounted(() => {
@@ -65,16 +80,18 @@ export const waterMark = defineComponent({
       div = null
     })
 
-    return () => h('div', {
-      'class': 'water-container',
-      'data-watermark': '',
-      'style': {
-        position: 'relative',
-      },
-      'relative': '',
-      'ref': waterRef,
-    },
-    slots?.default?.(),
-    )
+    return () =>
+      h(
+        'div',
+        {
+          'class': 'water-container',
+          'data-watermark': '',
+          'style': {
+            position: 'relative',
+          },
+          'ref': waterRef,
+        },
+        slots?.default?.(),
+      )
   },
 }) as DefineComponent<props & Record<string, any>>

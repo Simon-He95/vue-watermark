@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { waterMark } from '../../../src'
+import { WaterMark } from '../../../src'
 </script>
 
 <template>
   <div>
-    <waterMark w-100 h-100>
+    <WaterMark :font-size="20" w-100 h-100>
       <div />
-    </waterMark>
+    </WaterMark>
   </div>
 </template>

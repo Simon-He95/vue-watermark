@@ -1,5 +1,5 @@
 export interface props {
-  text: string
+  text?: string
   fontSize?: number
   gap?: number
   styles?: string
