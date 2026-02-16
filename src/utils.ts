@@ -1,4 +1,4 @@
-import { ref, unref, watch } from 'vue'
+import { onScopeDispose, ref, unref, watch } from 'vue'
 
 interface Bg {
   base64: string
@@ -57,7 +57,48 @@ export function useWatermarkBg(props: any) {
   if (typeof document === 'undefined' || typeof window === 'undefined')
     return bg
 
+  let updateToken = 0
+  let classObserver: MutationObserver | null = null
+  let mediaQuery: MediaQueryList | null = null
+  let mediaHandler: (() => void) | null = null
+
+  const cleanupAutoListeners = () => {
+    if (mediaQuery && mediaHandler) {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', mediaHandler)
+      }
+      else {
+        mediaQuery.removeListener(mediaHandler as any)
+      }
+    }
+    mediaQuery = null
+    mediaHandler = null
+
+    if (classObserver) {
+      classObserver.disconnect()
+      classObserver = null
+    }
+  }
+
+  const commitCanvas = (
+    canvas: HTMLCanvasElement,
+    canvasSize: number,
+    dpr: number,
+    token: number,
+  ) => {
+    if (token !== updateToken)
+      return false
+
+    bg.value = {
+      base64: canvas.toDataURL(),
+      size: canvasSize,
+      styleSize: canvasSize / dpr,
+    }
+    return true
+  }
+
   const update = async () => {
+    const token = ++updateToken
     const dpr = window.devicePixelRatio || 1
     const fontSizeVal = unref(props.fontSize ?? 40)
     const textVal = unref(props.text ?? '')
@@ -77,7 +118,9 @@ export function useWatermarkBg(props: any) {
       let isDark = hasDarkClass
       if (!hasDarkClass) {
         const mq
-          = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+          = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(prefers-color-scheme: dark)')
+            : null
         isDark = mq ? mq.matches : false
       }
       const autoDark = unref(props.autoColorDark ?? 'rgba(255,255,255,0.35)')
@@ -90,9 +133,11 @@ export function useWatermarkBg(props: any) {
         = typeof colorProp === 'string' && colorProp.trim().startsWith('var(')
       if (isVar) {
         const inside = colorProp.trim().slice(4, -1)
-        const [nameRaw, fallbackRaw] = inside.split(',')
-        const name = nameRaw?.trim() || ''
-        const fallback = fallbackRaw?.trim() || ''
+        const splitIndex = inside.indexOf(',')
+        const name
+          = splitIndex === -1 ? inside.trim() : inside.slice(0, splitIndex).trim()
+        const fallback
+          = splitIndex === -1 ? '' : inside.slice(splitIndex + 1).trim()
         const resolved = name
           ? getComputedStyle(document.documentElement)
               .getPropertyValue(name)
@@ -117,24 +162,16 @@ export function useWatermarkBg(props: any) {
     const canvasSize = Math.max(100, width) + gapVal * dpr
 
     // If image is provided and is an HTMLImageElement that's already loaded, draw it sync
-    if (
-      imageVal
-      && (imageVal as any).tagName === 'IMG'
-      && (imageVal as any).complete
-    ) {
+    if (imageVal && imageVal instanceof HTMLImageElement && imageVal.complete) {
       try {
         const canvas = drawImageToCanvas(
-          imageVal as HTMLImageElement,
+          imageVal,
           rotationVal,
           canvasSize,
           imageScale,
         )
-        bg.value = {
-          base64: canvas.toDataURL(),
-          size: canvasSize,
-          styleSize: canvasSize / dpr,
-        }
-        return
+        if (commitCanvas(canvas, canvasSize, dpr, token))
+          return
       }
       catch {
         // fallthrough to text
@@ -143,11 +180,13 @@ export function useWatermarkBg(props: any) {
 
     // If imageVal is a string, attempt to load it as an image (supports data URL, svg text via blob)
     if (typeof imageVal === 'string' && imageVal.trim()) {
+      let blobUrl = ''
       let src = imageVal.trim()
       // If it's an inline svg string (starts with <svg), create a blob URL
       if (src.startsWith('<svg')) {
         const blob = new Blob([src], { type: 'image/svg+xml' })
         src = URL.createObjectURL(blob)
+        blobUrl = src
       }
 
       const img = new Image()
@@ -170,24 +209,21 @@ export function useWatermarkBg(props: any) {
           canvasSize,
           imageScale,
         )
-        bg.value = {
-          base64: canvas.toDataURL(),
-          size: canvasSize,
-          styleSize: canvasSize / dpr,
-        }
-        // revoke blob URL if we created one
-        if (src.startsWith('blob:')) {
-          URL.revokeObjectURL(src)
-        }
-        return
+        if (commitCanvas(canvas, canvasSize, dpr, token))
+          return
       }
       catch {
-        // image failed to load — fall back to text
-        if (src.startsWith('blob:')) {
-          URL.revokeObjectURL(src)
+        // image failed to load, fall back to text
+      }
+      finally {
+        if (blobUrl) {
+          URL.revokeObjectURL(blobUrl)
         }
       }
     }
+
+    if (token !== updateToken)
+      return
 
     // Fallback: draw text with the computed fill color
     const canvas = createCanvasAndDrawText(
@@ -197,18 +233,11 @@ export function useWatermarkBg(props: any) {
       canvasSize,
       fillColor,
     )
-    bg.value = {
-      base64: canvas.toDataURL(),
-      size: canvasSize,
-      styleSize: canvasSize / dpr,
-    }
+    commitCanvas(canvas, canvasSize, dpr, token)
   }
 
-  // run initial update
-  update()
-
   // watch relevant props and update when they change
-  watch(
+  const stopPropsWatch = watch(
     () => [
       unref(props.text),
       unref(props.image),
@@ -221,35 +250,60 @@ export function useWatermarkBg(props: any) {
       unref(props.autoColorLight),
     ],
     () => {
-      update()
+      void update()
     },
+    { immediate: true },
   )
 
-  // If color is 'auto', listen to prefers-color-scheme and .dark class changes
-  if (unref(props.color ?? 'auto') === 'auto') {
-    // System theme changes
-    if (window.matchMedia) {
-      const mq = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = () => update()
-      if (mq.addEventListener) {
-        mq.addEventListener('change', handler)
-      }
-      else {
-        mq.addListener(handler)
-      }
-    }
+  const stopColorWatch = watch(
+    () => unref(props.color ?? 'auto'),
+    (color) => {
+      cleanupAutoListeners()
+      if (color !== 'auto')
+        return
 
-    // App-level .dark class changes on html/body
-    const targets: Element[] = []
-    if (document?.documentElement)
-      targets.push(document.documentElement)
-    if (document?.body)
-      targets.push(document.body)
-    const mo = new MutationObserver(() => update())
-    for (const t of targets) {
-      mo.observe(t, { attributes: true, attributeFilter: ['class'] })
-    }
-  }
+      // System theme changes
+      mediaHandler = () => {
+        void update()
+      }
+
+      // Legacy browsers can still use addListener/removeListener.
+      if (typeof window.matchMedia === 'function') {
+        mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        if (mediaQuery.addEventListener) {
+          mediaQuery.addEventListener('change', mediaHandler)
+        }
+        else {
+          mediaQuery.addListener(mediaHandler as any)
+        }
+      }
+
+      // App-level .dark class changes on html/body
+      const targets: Element[] = []
+      if (document?.documentElement)
+        targets.push(document.documentElement)
+      if (document?.body)
+        targets.push(document.body)
+      classObserver = new MutationObserver(() => {
+        void update()
+      })
+      for (const t of targets) {
+        classObserver.observe(t, {
+          attributes: true,
+          attributeFilter: ['class'],
+        })
+      }
+    },
+    { immediate: true },
+  )
+
+  onScopeDispose(() => {
+    // invalidate any in-flight async updates
+    updateToken++
+    stopPropsWatch()
+    stopColorWatch()
+    cleanupAutoListeners()
+  })
 
   return bg
 }

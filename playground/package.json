@@ -7,7 +7,8 @@
     "dev": "vite --port 3333 --open",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest --run",
+    "test:update": "vitest -u --run"
   },
   "dependencies": {
     "@vueuse/core": "^9.13.0",

@@ -1,3 +1,4 @@
+import process from 'node:process'
 import {
   defineConfig,
   presetAttributify,
@@ -7,6 +8,8 @@ import {
   // transformerDirectives,
   // transformerVariantGroup,
 } from 'unocss'
+
+const isVitest = process.env.VITEST === 'true'
 
 export default defineConfig({
   shortcuts: [
@@ -26,13 +29,17 @@ export default defineConfig({
       scale: 1.2,
       warn: true,
     }),
-    presetWebFonts({
-      fonts: {
-        sans: 'DM Sans',
-        serif: 'DM Serif Display',
-        mono: 'DM Mono',
-      },
-    }),
+    ...(isVitest
+      ? []
+      : [
+          presetWebFonts({
+            fonts: {
+              sans: 'DM Sans',
+              serif: 'DM Serif Display',
+              mono: 'DM Mono',
+            },
+          }),
+        ]),
   ],
   // transformers: [
   //   transformerDirectives(),

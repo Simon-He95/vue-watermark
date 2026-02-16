@@ -3,8 +3,11 @@ import antfu from '@antfu/eslint-config'
 export default antfu(
   {
     ignores: [
-      // eslint ignore globs here
-      './playground/shims.d.ts',
+      'node_modules',
+      'dist',
+      'pnpm-lock.yaml',
+      'playground/shims.d.ts',
+      'playground/components.d.ts',
     ],
   },
   {
